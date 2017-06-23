@@ -56,20 +56,25 @@
 
             this.init = function (callback) {
 
+                var apps = [];
+
                 self.ccm.helper.makeIterable(self.node.children).map(function (tag) {
 
                     switch (tag.tagName) {
                         case 'CCM-DESKTOP-APP':
-                            var conf = self.ccm.helper.generateConfig( tag )
-                            console.log(conf);
+                            var app = self.ccm.helper.generateConfig( tag );
+                            delete app.node; // node is not necessary
+                            apps.push(app);
                             break;
                         case 'CCM-DESKTOP-ADD':
-                            var conf = self.ccm.helper.generateConfig( tag )
-                            console.log(conf);
                             break;
                     }
 
                 });
+
+                if (apps.length > 0)
+                    self.apps = apps;
+                console.log(self.apps);
 
                 callback();
             };
