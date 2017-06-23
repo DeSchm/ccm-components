@@ -16,7 +16,8 @@
             apps: [
                 {
                     name: 'ccm-quiz',
-                    url: 'https://github.com/akless/ccm-components/blob/master/quiz/ccm.quiz.js' // Beispiel
+                    url: 'https://github.com/akless/ccm-components/blob/master/quiz/ccm.quiz.js', // Beispiei
+                    img_url: ''
                 }
             ]
             ,
