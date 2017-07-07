@@ -4,8 +4,8 @@
 
 ( function () {
 
-    var ccm_version = '8.0.0';
-    var ccm_url = 'https://akless.github.io/ccm/version/ccm-8.0.0.min.js';
+    var ccm_version = '8.1.0';
+    var ccm_url = 'https://akless.github.io/ccm/version/ccm-8.1.0.min.js';
 
     var component_name = 'desktop';
     var component_obj = {
@@ -13,40 +13,53 @@
         name: component_name,
 
         config: {
-            apps: [
-                {
-                    name: 'ccm-quiz',
-                    url: 'https://github.com/akless/ccm-components/blob/master/quiz/ccm.quiz.js', // Beispiei
-                    img_url: ''
-                }
-            ]
-            ,
+            style: [
+                ['ccm.load', './styles/example/desktop.css']
+            ],
+            apps: [ "ccm.get", "apps_config.js", "example"],
             html_templates: {
-                'ccm-desktop-app': {
-                    inner: {
-                        div: {
-                            class: 'ccm-desktop-app',
-                            inner: {
-                                'img': {
-                                    src: '%img_url%'
-                                }
-                            }
+                'main': {
+                    tag: 'div',
+                    class: 'main',
+                    inner: [
+                        {
+                            tag: 'div',
+                            id: 'apps',
+                            class: 'apps'
                         }
-                    }
+                    ]
                 },
-                'ccm-desktop-add': {
-                    inner: {
-                        div: {
-                            class: 'ccm-desktop-add',
+                'app': {
+                    tag: 'div',
+                    class: 'app',
+                    inner: [
+                        {
+                            tag: 'img',
+                            src: '%image%'
+                        },
+                        {
+                            tag: 'div',
+                            class: 'name',
+                            inner: '%name%'
+                        }
+                    ]
+                },
+                'add': {
+                    tag: 'div',
+                    class: 'app',
+                    inner: [
+                        {
+                            tag: 'div',
+                            class: 'icon',
                             inner: {
-                                'img': {
-                                    src: '%img_url%'
-                                }
+                                tag: 'img',
+                                src: '%img_url%'
                             }
                         }
-                    }
+                    ]
                 }
-            }
+            },
+            ccm_add: false
         },
 
         Instance: function () {
@@ -74,7 +87,6 @@
 
                 if (apps.length > 0)
                     self.apps = apps;
-                console.log(self.apps);
 
                 callback();
             };
@@ -86,6 +98,32 @@
             };
 
             this.start = function (callback) {
+
+                var main_elem = self.ccm.helper.html( my.html_templates.main );
+
+                self.ccm.helper.setContent( self.element, self.ccm.helper.protect( main_elem ) );
+
+                my.apps.forEach(function (app) {
+                    var app_elem = self.ccm.helper.html( my.html_templates.app, app);
+
+                    app_elem.onclick = function () {
+                        var new_window = window.open("", app.name, "");
+
+                        new_window.document.title = app.name;
+
+                        app.config.element = new_window.document.body;
+
+                        self.ccm.start( app.url, app.config );
+                    };
+
+                    main_elem.querySelector('#apps').appendChild(app_elem);
+                });
+
+                if(my.ccm_add){
+                    var add_elem = self.ccm.helper.html( my.html_templates.add);
+                    main_elem.querySelector('#apps').appendChild(add_elem);
+                }
+
                 callback();
             };
 
