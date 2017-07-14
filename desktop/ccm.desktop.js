@@ -30,12 +30,14 @@
                     ]
                 },
                 'app': {
-                    tag: 'div',
+                    tag: 'a',
                     class: 'app',
+                    draggable: true,
                     inner: [
                         {
                             tag: 'img',
-                            src: '%image%'
+                            src: '%image%',
+                            draggable: false
                         },
                         {
                             tag: 'div',
@@ -57,9 +59,32 @@
                             }
                         }
                     ]
+                },
+                'dialog': {
+                    tag: 'div',
+                    class: 'dialog',
+                    inner: [
+                        {
+                            tag: 'div',
+                            class: 'head',
+                            draggable: true,
+                            inner: [
+                                '%name%', {
+                                    tag: 'div',
+                                    class: 'close',
+                                    inner: '&#10060;'
+                                }
+                            ]
+                        },
+                        {
+                            tag: 'div',
+                            class: 'main'
+                        }
+                    ]
                 }
             },
-            ccm_add: false
+            ccm_add: false,
+            ccm_app_onclick_new_window: true
         },
 
         Instance: function () {
@@ -104,14 +129,74 @@
                 self.ccm.helper.setContent( self.element, self.ccm.helper.protect( main_elem ) );
 
                 my.apps.forEach(function (app) {
+
                     var app_elem = self.ccm.helper.html( my.html_templates.app, app);
 
                     app_elem.onclick = function () {
+
                         var new_window = window.open("", app.name, "");
 
                         new_window.document.title = app.name;
 
                         app.config.element = new_window.document.body;
+
+                        self.ccm.start( app.url, app.config );
+                    };
+
+                    var app_dif_x;
+                    var app_dif_y;
+
+                    app_elem.ondragstart = function (event) {
+                        var rect = app_elem.getBoundingClientRect();
+
+                        app_dif_x = event.pageX - (rect.left + window.scrollX) + 10;
+                        app_dif_y = event.pageY - (rect.top + window.scrollY) + 10;
+                    };
+
+                    app_elem.ondragend = function (event) {
+
+                        if(event.pageX - app_dif_x <= 0 || event.pageY - app_dif_y <= 0)
+                            return;
+
+                        console.log(event);
+
+                        var dialog_elem = self.ccm.helper.html( my.html_templates.dialog, app);
+
+                        app.config.element = dialog_elem.querySelector('.main');
+                        var dialog_head_elem = dialog_elem.querySelector('.head');
+
+                        var dif_x;
+                        var dif_y;
+
+                        dialog_head_elem.ondragstart = function (event){
+
+                            var rect = dialog_elem.getBoundingClientRect();
+
+                            dif_x = event.pageX - (rect.left + window.scrollX);
+                            dif_y = event.pageY - (rect.top + window.scrollY);
+
+                        };
+
+                        dialog_head_elem.ondrag = function (event){
+
+                            event.preventDefault();
+
+                            if(event.screenX !== 0 && event.screenY !== 0) {
+                                dialog_elem.style.top = (event.pageY - dif_y - 6) + 'px'; // 6 = padding + border
+                                dialog_elem.style.left = (event.pageX - dif_x - 6) + 'px';
+                            }
+
+                        };
+
+                        dialog_head_elem.querySelector('.close').onclick = function () {
+
+                            dialog_elem.remove();
+                        };
+
+                        dialog_elem.style.top = (event.pageY - app_dif_y) + 'px'; // 6 = padding + border
+                        dialog_elem.style.left = (event.pageX - app_dif_x) + 'px';
+
+                        app_elem.parentElement.appendChild(dialog_elem);
 
                         self.ccm.start( app.url, app.config );
                     };

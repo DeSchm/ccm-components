@@ -2,7 +2,7 @@
     position: relative;
     display: flex;
     flex-flow: wrap;
-    justify-content: space-around;
+    justify-content: flex-start;
 }
 
 .app {
@@ -12,12 +12,29 @@
 }
 
 .app:hover {
-    opacity: 0.75;
+    /* opacity: 0.75; */
 }
 
 .app img {
     width: 100%;
     height: auto;
+}
+
+.dialog {
+    position: absolute;
+    background: #f6f6f6;
+    padding: 5px;
+    border: 1px solid;
+}
+
+.dialog .head {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+}
+
+.dialog .main {
+    padding: 5px;
 }
 
 /* responsive stuff */
@@ -36,6 +53,6 @@
 
 @media (min-width: 769px){
     .app {
-        flex-basis: 12.5%;
+       flex-basis: 12.5%;
     }
 }
