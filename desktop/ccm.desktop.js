@@ -1,5 +1,7 @@
 /**
- * Created by Dennis on 13.06.2017.
+ * @overview a ccm component for desktop applications
+ * @author Dennis Schmidt <dennis.schmidt1@smail.inf.h-brs.de> 2017
+ * @license The MIT License (MIT)
  */
 
 ( function () {
@@ -13,6 +15,7 @@
         name: component_name,
 
         config: {
+            debugging: false,
             style: [
                 ['ccm.load', './styles/example/desktop.css']
             ],
@@ -33,6 +36,18 @@
                     tag: 'a',
                     class: 'app',
                     draggable: true,
+                    href: "javascript:(" + function () {
+                        var x = document.createElement('script');
+                        x.setAttribute('src', '%url%');
+                        document.head.appendChild(x);
+                        x = document.createElement('link');
+                        x.rel = 'stylesheet';
+                        x.href = 'https://akless.github.io/ccm-components/libs/weblysleekui/font.css';
+                        document.head.appendChild(x);
+                        x = document.createElement('ccm-%index%');
+                        x.key = '%config%';
+                        document.body.insertBefore(x, document.body.firstChild);
+                    } + ")();",
                     inner: [
                         {
                             tag: 'img',
@@ -82,9 +97,7 @@
                         }
                     ]
                 }
-            },
-            ccm_add: false,
-            ccm_app_onclick_new_window: true
+            }
         },
 
         Instance: function () {
@@ -97,21 +110,17 @@
                 var apps = [];
 
                 self.ccm.helper.makeIterable(self.node.children).map(function (tag) {
-
-                    switch (tag.tagName) {
-                        case 'CCM-DESKTOP-APP':
-                            var app = self.ccm.helper.generateConfig( tag );
-                            delete app.node; // node is not necessary
-                            apps.push(app);
-                            break;
-                        case 'CCM-DESKTOP-ADD':
-                            break;
-                    }
-
+                    var app = self.ccm.helper.generateConfig(tag);
+                    delete app.node; // node is not necessary
+                    apps.push(app);
                 });
 
                 if (apps.length > 0)
                     self.apps = apps;
+
+                self.apps.map(function (app) {
+                    app.index = self.ccm.helper.getIndex(app.url);
+                });
 
                 callback();
             };
@@ -123,6 +132,10 @@
             };
 
             this.start = function (callback) {
+
+                var cursor = getCursor();
+
+                cursor.debug(my.debugging);
 
                 var main_elem = self.ccm.helper.html( my.html_templates.main );
 
@@ -143,62 +156,64 @@
                         self.ccm.start( app.url, app.config );
                     };
 
-                    var app_dif_x;
-                    var app_dif_y;
-
+                    var appPageDif;
+                    
                     app_elem.ondragstart = function (event) {
-                        var rect = app_elem.getBoundingClientRect();
 
-                        app_dif_x = event.pageX - (rect.left + window.scrollX) + 10;
-                        app_dif_y = event.pageY - (rect.top + window.scrollY) + 10;
+                        appPageDif = getPageDif(app_elem, event);
                     };
 
                     app_elem.ondragend = function (event) {
 
-                        if(event.pageX - app_dif_x <= 0 || event.pageY - app_dif_y <= 0)
+                        event.preventDefault();
+
+                        if (event.screenX < 0 || event.screenY < 0)
                             return;
 
-                        console.log(event);
+                        function createDialog() {
+                            var dialog_elem = self.ccm.helper.html(my.html_templates.dialog, app);
+                            app.config.element = dialog_elem.querySelector('.main');
 
-                        var dialog_elem = self.ccm.helper.html( my.html_templates.dialog, app);
+                            function addDialogHeaderMovement() {
+                                var dialog_head_elem = dialog_elem.querySelector('.head');
 
-                        app.config.element = dialog_elem.querySelector('.main');
-                        var dialog_head_elem = dialog_elem.querySelector('.head');
+                                var dialogPageDif;
 
-                        var dif_x;
-                        var dif_y;
+                                dialog_head_elem.ondragstart = function (event) {
 
-                        dialog_head_elem.ondragstart = function (event){
+                                    dialogPageDif = getPageDif(dialog_elem, event);
 
-                            var rect = dialog_elem.getBoundingClientRect();
+                                };
 
-                            dif_x = event.pageX - (rect.left + window.scrollX);
-                            dif_y = event.pageY - (rect.top + window.scrollY);
+                                dialog_head_elem.ondrag = function (event) {
 
-                        };
+                                    event.preventDefault();
 
-                        dialog_head_elem.ondrag = function (event){
+                                    if (event.screenX !== 0 && event.screenY !== 0) {
+                                        dialog_elem.style.top = (event.pageY + dialogPageDif.y - 6) + 'px'; // 6 = padding + border
+                                        dialog_elem.style.left = (event.pageX + dialogPageDif.x - 6) + 'px';
+                                    }
 
-                            event.preventDefault();
+                                };
 
-                            if(event.screenX !== 0 && event.screenY !== 0) {
-                                dialog_elem.style.top = (event.pageY - dif_y - 6) + 'px'; // 6 = padding + border
-                                dialog_elem.style.left = (event.pageX - dif_x - 6) + 'px';
+                                dialog_head_elem.querySelector('.close').onclick = function () {
+
+                                    dialog_elem.remove();
+                                };
+
                             }
 
-                        };
+                            addDialogHeaderMovement();
 
-                        dialog_head_elem.querySelector('.close').onclick = function () {
+                            app_elem.parentElement.appendChild(dialog_elem);
+                            self.ccm.start(app.url, app.config);
 
-                            dialog_elem.remove();
-                        };
+                            dialog_elem.style.top = (cursor.y() + appPageDif.y) + 'px';
+                            dialog_elem.style.left = (cursor.x() + appPageDif.x) + 'px';
 
-                        dialog_elem.style.top = (event.pageY - app_dif_y) + 'px'; // 6 = padding + border
-                        dialog_elem.style.left = (event.pageX - app_dif_x) + 'px';
+                        }
 
-                        app_elem.parentElement.appendChild(dialog_elem);
-
-                        self.ccm.start( app.url, app.config );
+                        createDialog();
                     };
 
                     main_elem.querySelector('#apps').appendChild(app_elem);
@@ -212,7 +227,47 @@
                 callback();
             };
 
+            function getPageDif(element, event) {
+                var rect = element.getBoundingClientRect();
 
+                var result_x = rect.left - event.pageX;
+                var result_y = rect.top - event.pageY;
+
+                return {
+                    x: result_x,
+                    y: result_y
+                };
+            }
+
+            function getCursor() {
+
+                var posX;
+                var posY;
+
+                var debug = false;
+
+                document.body.onmousemove = function (event) {
+                    posX = event.pageX;
+                    posY = event.pageY;
+                    if (debug) {
+                        console.log("Cursor: X: " + posX + ". Y: " + posY);
+                    }
+                };
+
+                return {
+                    x: function () {
+                        return posX;
+                    },
+                    y: function () {
+                        return posY;
+                    },
+                    debug: function (state) {
+                        debug = state;
+                    }
+                };
+
+
+            }
         }
     };
 
