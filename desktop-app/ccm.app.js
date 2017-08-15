@@ -74,10 +74,14 @@
                 app_elem.onclick = function (event) {
 
                     var app = self.app;
+                    var new_window = window.open("", app.title, "");
 
-                    app.config.root = document.body;
+                    new_window.document.title = app.title;
 
-                    self.ccm.start(app.src, app.config);
+                    self.ccm.start(app.src, app.config, function (instance) {
+                        new_window.document.body.appendChild(instance.root);
+                        console.log(instance.root);
+                    });
                 };
 
                 callback();
