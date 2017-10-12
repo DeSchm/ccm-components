@@ -6,18 +6,14 @@
 
 ( function () {
 
-    var filename = 'ccm.app.js';
+    var component = {
 
-    var ccm_version = '9.2.0';
-    var ccm_url = 'https://akless.github.io/ccm/version/ccm-9.2.0.js';
+        name: 'course',
 
-    var component_name = 'course';
-    var component_obj = {
-
-        name: component_name,
+        ccm: 'https://akless.github.io/ccm/ccm.js',
 
         config: {
-            loader: ['ccm.load', '//kaul.inf.h-brs.de/data/ccm/loader/ccm.loader.js'],
+            loader: ['ccm.component', '//kaul.inf.h-brs.de/data/ccm/loader/ccm.loader.js'],
             html_templates: {
                 'default': {
                     tag: 'div',
@@ -27,11 +23,14 @@
                             tag: 'ul'
                         },
                         {
-                            tag: 'ccm-loader',
-                            id: 'display',
-                            nr: 1,
+                            tag: 'div',
+                            class: 'display'
                         }
                     ]
+                },
+                'display': {
+                    tag: 'div',
+                    class: 'display'
                 },
                 'element': {
                     tag: 'li',
@@ -39,35 +38,23 @@
                         {
                             tag: 'a',
                             href: '#',
-                            inner: '%title%'
+                            inner: '%title%',
+                            onclick: ''
                         }
                     ]
                 }
             },
-            courses: [ "ccm.get", "courses_config.js", "example"],
-            settings: {
-                elements: []
-            }
+            courses: [ "ccm.get", "courses_config.js", "example"]
         },
 
         Instance: function () {
 
             var self = this;
 
-            this.init = function (callback) {
-
-                callback();
-            };
-
-            this.ready = function (callback) {
-                callback();
-            };
-
             this.start = function (callback) {
 
                 var app = self.ccm.helper.html(self.html_templates.default, self.settings);
                 var elements = app.getElementsByTagName('ul')[0];
-                var display = app.getElementsByTagName('ccm-loader')[0];
 
                 self.courses.forEach((e) => {
 
@@ -76,25 +63,43 @@
 
                     var element = self.ccm.helper.html(self.html_templates.element, element_config);
 
-                    element.onclick = function(){
-                        display.setAttribute('nr', String(e.loader_nr));
+                    element.onclick = function (){
+                        setDisplay(app, e.loader_nr);
                     };
 
                     elements.appendChild(element);
                 });
 
-                console.log(self.elements);
+                setDisplay(app, self.courses[0].loader_nr);
 
                 self.ccm.helper.setContent(self.element, self.ccm.helper.protect(app));
 
-                callback();
+                if (callback) callback();
             };
+
+            function setDisplay(app, nr) {
+
+                console.log(nr);
+
+                var display = app.getElementsByClassName('display')[0];
+
+                while( display.firstChild ) {
+                    display.removeChild( display.firstChild );
+                }
+
+                var value = document.createElement('div');
+
+                self.loader.start({
+                    root: value,
+                    nr: nr
+                });
+
+                display.appendChild(value);
+
+            }
 
         }
     };
 
-    if ( window.ccm && window.ccm.files ) window.ccm.files[ filename ] = component_obj;
-    var namespace = window.ccm && ccm.components[ component_name ]; if ( namespace ) { if ( namespace.ccm_version ) ccm_version = namespace.ccm_version; if ( namespace.ccm_url ) ccm_url = namespace.ccm_url; }
-    if ( !window.ccm || !ccm[ ccm_version ] ) { var tag = document.createElement( 'script' ); document.head.appendChild( tag ); tag.onload = register; tag.src = ccm_url; } else register();
-    function register() { ccm[ ccm_version ].component( component_obj ); delete window.ccm.files[ filename ]; }
+    function p(){window.ccm[v].component(component)}var f="ccm."+component.name+(component.version?"-"+component.version.join("."):"")+".js";if(window.ccm&&null===window.ccm.files[f])window.ccm.files[f]=component;else{var n=window.ccm&&window.ccm.components[component.name];n&&n.ccm&&(component.ccm=n.ccm),"string"==typeof component.ccm&&(component.ccm={url:component.ccm});var v=component.ccm.url.split("/").pop().split("-");if(v.length>1?(v=v[1].split("."),v.pop(),"min"===v[v.length-1]&&v.pop(),v=v.join(".")):v="latest",window.ccm&&window.ccm[v])p();else{var e=document.createElement("script");document.head.appendChild(e),component.ccm.integrity&&e.setAttribute("integrity",component.ccm.integrity),component.ccm.crossorigin&&e.setAttribute("crossorigin",component.ccm.crossorigin),e.onload=function(){p(),document.head.removeChild(e)},e.src=component.ccm.url}}
 }() );
