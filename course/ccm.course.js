@@ -10,7 +10,7 @@
 
         name: 'course',
 
-        ccm: 'https://akless.github.io/ccm/ccm.js',
+        ccm: 'https://akless.github.io/ccm/version/ccm-11.2.1.js',
 
         config: {
             loader: ['ccm.component', '//kaul.inf.h-brs.de/data/ccm/loader/ccm.loader.js'],
@@ -79,22 +79,12 @@
 
             function setDisplay(app, nr) {
 
-                console.log(nr);
-
                 var display = app.getElementsByClassName('display')[0];
 
-                while( display.firstChild ) {
-                    display.removeChild( display.firstChild );
-                }
-
-                var value = document.createElement('div');
-
                 self.loader.start({
-                    root: value,
+                    root: display,
                     nr: nr
                 });
-
-                display.appendChild(value);
 
             }
 
